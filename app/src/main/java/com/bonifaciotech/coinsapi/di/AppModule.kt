@@ -1,6 +1,6 @@
 package com.bonifaciotech.coinsapi.di
 
-import com.bonifaciotech.coinsapi.NameRepository
+import com.bonifaciotech.coinsapi.CoinRepository
 import com.bonifaciotech.coinsapi.data.NameApi
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -25,7 +25,7 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideExchangeApi(moshi: Moshi) : NameApi {
+    fun provideCoinsApi(moshi: Moshi) : NameApi {
         return Retrofit.Builder()
             .baseUrl("http://dbonifacio.somee.com")
             .addConverterFactory(MoshiConverterFactory.create(moshi))
@@ -35,7 +35,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideExchangeRepository(nameApi: NameApi): NameRepository {
-        return NameRepository(nameApi)
+    fun provideExchangeRepository(nameApi: NameApi): CoinRepository {
+        return CoinRepository(nameApi)
     }
+
 }

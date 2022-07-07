@@ -5,30 +5,23 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.bonifaciotech.coinsapi.data.NameApi
-import com.bonifaciotech.coinsapi.data.remote.dto.NameData
+import com.bonifaciotech.coinsapi.data.remote.dto.Coin
 import com.bonifaciotech.coinsapi.ui.theme.CoinsApiTheme
 import com.bonifaciotech.coinsapi.util.Resource
-import dagger.hilt.android.lifecycle.HiltViewModel
+import com.bonifaciotech.coinsapi.util.Screen
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import okio.IOException
 import retrofit2.HttpException
 import javax.inject.Inject
@@ -40,10 +33,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             CoinsApiTheme {
                 // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colors.background
-                ) {
+                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background) {
                     Greeting()
                 }
             }
@@ -53,80 +43,29 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun Greeting() {
-    NameListScreen()
-}
+    val navHostController = rememberNavController()
 
-@Composable
-fun NameListScreen(
-    viewModel: exchangeViewModel = hiltViewModel()
-) {
-    val state = viewModel.state.value
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(text = "My Api")
-                })
+    NavHost(navController = navHostController, startDestination = Screen.ConsultaCoins.route){
+
+        composable(route = Screen.ConsultaCoins.route){
+            ConsultaCoins(IrRegistro = {navHostController.navigate(Screen.RegistroCoins.route)})
         }
 
-    ) {
-
-        Column(modifier = Modifier
-            .padding(it)
-            .fillMaxSize()) {
-            LazyColumn(modifier = Modifier.fillMaxSize()){
-                items(state.moneda){ moneda ->
-                    NameItem(nameData = moneda, {})
-                }
-            }
-
-            if (state.isLoading)
-                CircularProgressIndicator()
-
+        composable(route = Screen.RegistroCoins.route){
+            RegistroCoins()
         }
-
-
-    }
-}
-
-@Composable
-fun NameItem(
-    nameData: NameData,
-    onClick : (NameData) -> Unit
-) {
-
-    Row(modifier = Modifier
-        .fillMaxWidth()
-        .padding(16.dp)
-        .clickable { onClick(nameData) }
-
-
-    ) {
-        Text(
-            text = "${nameData.monedaId}  (${nameData.descripcion.orEmpty()})",
-            style = MaterialTheme.typography.body1,
-            overflow = TextOverflow.Ellipsis
-        )
-        /* Text(
-
-             text = "${exchange.description} ",
-             style = MaterialTheme.typography.body1,
-             overflow = TextOverflow.Ellipsis
-         )*/
-        Text(
-            text = "${nameData.imageUrl} ",
-            style = MaterialTheme.typography.body1,
-            overflow = TextOverflow.Ellipsis
-        )
     }
 
+    //RegistroCoins()
+    //ConsultaCoins()
 }
 
-class NameRepository @Inject constructor(
+
+class CoinRepository @Inject constructor(
     private val api : NameApi
-) {
 
-    fun getName(): Flow<Resource<List<NameData>>> = flow {
+) {
+    fun getName(): Flow<Resource<List<Coin>>> = flow {
         try {
             emit(Resource.Loading()) //indicar que estamos cargando
 
@@ -141,39 +80,60 @@ class NameRepository @Inject constructor(
             emit(Resource.Error(e.message ?: "verificar tu conexion a internet"))
         }
     }
+
+    suspend fun postCoi(coin: Coin){
+        api.agregarCoin(coin)
+
+    }
 }
+
+    //
+
+    //
+
+
+
 
 data class NameListState(
     val isLoading: Boolean = false,
-    val moneda: List<NameData> = emptyList(),
+    val Moneda: List<Coin> = emptyList(),
     val error: String = ""
 )
 
-@HiltViewModel
-class exchangeViewModel @Inject constructor(
-    private val nameRepository: NameRepository
-): ViewModel(){
+@Composable
+fun NameItem(
+    coin: Coin,
+    onClick : (Coin) -> Unit
+) {
 
-    private var _state = mutableStateOf(NameListState())
-    val state: State<NameListState> = _state
+    Row(modifier = Modifier
+        .fillMaxWidth()
+        .padding(16.dp)
+        .clickable { onClick(coin) }
 
-    init {
-        nameRepository.getName().onEach { result ->
-            when (result) {
-                is Resource.Loading -> {
-                    _state.value = NameListState(isLoading = true)
-                }
 
-                is Resource.Success -> {
-                    _state.value = NameListState(moneda = result.data ?: emptyList())
-                }
-                is Resource.Error -> {
-                    _state.value = NameListState(error = result.message ?: "Error desconocido")
-                }
-            }
-        }.launchIn(viewModelScope)
+    ) {
+        Text(
+            text = "${coin.monedaId}) ",
+            style = MaterialTheme.typography.body1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Text(
+            text = "${coin.descripcion.orEmpty()} ",
+            style = MaterialTheme.typography.body1,
+            overflow = TextOverflow.Ellipsis
+        )
+
+        Text(
+            text = "${coin.valor} ",
+            style = MaterialTheme.typography.body1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
+
 }
+
+//------------------------------------------------------
 
 
 @Preview(showBackground = true)

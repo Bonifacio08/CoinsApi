@@ -10,11 +10,15 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.bonifaciotech.coinsapi.ui.Coin.coinViewModel
 
 //Falta codigo dentro de la funcion ()
 @Composable
-fun RegistroCoins() {
-    //val scaffoldState = rememberScaffoldState()
+fun RegistroCoins(
+    viewModel: coinViewModel = hiltViewModel()
+) {
+
 
     Scaffold(
         topBar = {
@@ -36,8 +40,8 @@ fun RegistroCoins() {
                 leadingIcon = {
                     Icon(imageVector = Icons.Default.Person, contentDescription = null)
                 },
-                value = "",
-                onValueChange ={},
+                value = viewModel.descrip,
+                onValueChange ={viewModel.descrip = it},
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -48,14 +52,18 @@ fun RegistroCoins() {
                 leadingIcon = {
                     Icon(imageVector = Icons.Default.MonetizationOn, contentDescription = null)
                 },
-                value = "",
-                onValueChange = {},
+                value = viewModel.Precio,
+                onValueChange = {viewModel.Precio = it},
                 modifier = Modifier.fillMaxWidth()
             )
 
             Button(
                 onClick = {
+                    if(viewModel.descrip.isNullOrEmpty() || viewModel.Precio.isNullOrEmpty()){
+                        return@Button
+                    }
 
+                    viewModel.guardar()
                 }) {
                 Text(text = "Guardar")
             }
